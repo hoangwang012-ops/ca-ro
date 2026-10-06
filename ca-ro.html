@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CỜ CA RÔ WEB - ĐẤU VỚI MÁY (AI) HOÀN CHỈNH</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #d2a06e;
+            color: #8b4513;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 10px;
+        }
+        h1 {
+            color: #8b0000;
+            margin: 5px 0;
+            font-size: 25px;
+            font-weight: bold;
+        }
+        .panel-top {
+            background-color: #ebd2a0;
+            border: 2px solid #a0522d;
+            padding: 15px;
+            border-radius: 5px;
+            width: 662px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .control-group label {
+            font-weight: bold;
+            font-size: 13px;
+            color: #8b4513;
+        }
+        button, select {
+            font-size: 14px;
+            font-weight: bold;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            border: 1px solid #a0522d;
+            background-color: #f5deb3;
+            color: #8b4513;
+        }
+        button:active { transform: scale(0.98); }
+        .status-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px dashed #a0522d;
+            padding-top: 10px;
+        }
+        #lblThoiGian {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ff0000;
+            width: 250px;
+        }
+        #lblTySo {
+            font-size: 16px;
+            font-weight: bold;
+            color: #008000;
+        }
+        .board-container {
+            background-color: #ebd2a0;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 2px solid #a0522d;
+            width: 662px;
+            height: 662px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+        .grid-caro {
+            display: grid;
+            grid-template-columns: repeat(20, 32px);
+            grid-template-rows: repeat(20, 32px);
+            background-color: #a0522d;
+            width: 640px;
+            height: 640px;
+            box-sizing: border-box;
+        }
+        .box-cell {
+            width: 32px;
+            height: 32px;
+            background-color: #f5deb3;
+            border: 1px solid #a0522d; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+        .box-cell:hover {
+            background-color: #ffebd2 !important;
+        }
+
+        /* --- CÁC CLASS HIỆU ỨNG ĐƯỢC TỐI ƯU TRÁNH ĐÈ MÀU NỀN --- */
+        /* Hiệu ứng nhấp nháy cho ô máy vừa đi */
+        .may-vua-di {
+            animation: nhapNhayMay 0.6s infinite alternate !important;
+            border: 2px solid #0000ff !important;
+            z-index: 5;
+        }
+        @keyframes nhapNhayMay {
+            from { background-color: #f5deb3; }
+            to { background-color: #6495ed; } /* Nhấp nháy sang màu xanh dương nhạt */
+        }
+
+        /* Hiệu ứng bọc lấp lánh cho 5 ô thắng cuộc */
+        .o-thang-cuoc {
+            animation: oThangCuocAnimation 0.6s infinite alternate !important;
+            border: 2px solid #ff4500 !important;
+            box-shadow: inset 0 0 10px #ff4500, 0 0 10px #ff4500 !important;
+            z-index: 10;
+        }
+        @keyframes oThangCuocAnimation {
+            from {
+                background-color: #ffd700 !important;
+                transform: scale(1);
+            }
+            to {
+                background-color: #ff8c00 !important;
+                transform: scale(1.1); /* Hơi phồng nhẹ lên tạo điểm nhấn */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>CỜ CA RÔ - ĐẤU VỚI MÁY (AI)</h1>
+
+    <div class="panel-top">
+        <div class="control-row">
+            <button id="btnPlayMain">CHƠI / CHƠI LẠI ↺</button>
+            <button id="btnUndoMain" style="background-color: #87cefa; color: #000000;">Hoàn Nước ↩</button>
+            <button id="btnAmThanh">NHẠC: 🔊 OFF</button>
+            
+            <div class="control-group">
+                <label>Giao Diện</label>
+                <select id="cbGiaoDien">
+                    <option value="2">Gỗ</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Kiểu Quân Cờ</label>
+                <select id="cbKieuQuanCo">
+                    <option value="0">Kiểu: O - X</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Chơi Trước</label>
+                <select id="cbLuotDiTruoc">
+                    <option value="0">Bạn (X)</option>
+                    <option value="1">Máy (O)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Thời Gian</label>
+                <select id="cbCaiDatThoiGian">
+                    <option value="-1">Vô hạn</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Cấp Độ</label>
+                <select id="cbCapDo">
+                    <option value="1">Thông Minh (AI)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="status-section">
+            <div id="lblThoiGian">Nhấn CHƠI để bắt đầu</div>
+            <canvas id="panelDongHo" width="60" height="60"></canvas>
+            <div id="lblTySo">Tỷ số ván đấu ➔ Bạn: 0 - Máy: 0</div>
+        </div>
+    </div>
+
+    <div class="board-container">
+        <div id="banCo" class="grid-caro">
+            <!-- GIỮ NGUYÊN: Tự động sinh 400 ô cờ 20x20 của file gốc -->
+            <script>
+                for (let r = 0; r < 20; r++) {
+                    for (let c = 0; c < 20; c++) {
+                        document.write('<div class="box-cell" id="cell-' + r + '-' + c + '" data-row="' + r + '" data-col="' + c + '"></div>');
+                    }
+                }
+            </script>
+        </div>
+    </div>
+
+    <script>
+        let banCoMang = new Map();
+        let dangChoi = false;
+        let luotCuaMay = false;
+        let lichSuNuocDi = []; 
+        let tySoBan = 0;
+        let tySoMay = 0;
+
+        // Khởi tạo các đối tượng âm thanh từ file có sẵn của bạn
+        const mAudioNen = new Audio('background.wav');
+        const mAudioThang = new Audio('win.wav');
+        const mAudioThua = new Audio('lose.wav');
+
+        // Cấu hình nhạc nền lặp đi lặp lại liên tục
+        mAudioNen.loop = true;
+        let trangThaiNhac = false; // Mặc định ban đầu tắt nhạc nền
+
+        let btnPlay, btnUndo, btnAmThanh, lblThoiGian, lblTySo, cbLuotDiTruoc, cacOVuong;
+
+        window.addEventListener("DOMContentLoaded", function() {
+            btnPlay = document.getElementById("btnPlayMain");
+            btnUndo = document.getElementById("btnUndoMain");
+            btnAmThanh = document.getElementById("btnAmThanh");
+            lblThoiGian = document.getElementById("lblThoiGian");
+            lblTySo = document.getElementById("lblTySo");
+            cbLuotDiTruoc = document.getElementById("cbLuotDiTruoc");
+            cacOVuong = document.querySelectorAll(".box-cell");
+
+            btnPlay.addEventListener("click", batDauTroChoi);
+
+            // Xử lý sự kiện bật/tắt nhạc nền
+            btnAmThanh.addEventListener("click", function() {
+                trangThaiNhac = !trangThaiNhac;
+                if (trangThaiNhac) {
+                    mAudioNen.play().catch(err => console.log("Trình duyệt chặn tự động phát nhạc:", err));
+                    btnAmThanh.innerText = "NHẠC: 🔊 ON";
+                    btnAmThanh.style.backgroundColor = "#98fb98"; 
+                } else {
+                    mAudioNen.pause();
+                    btnAmThanh.innerText = "NHẠC: 🔇 OFF";
+                    btnAmThanh.style.backgroundColor = "#f5deb3"; 
+                }
+            });
+
+            btnUndo.addEventListener("click", function() {
+                if (!dangChoi || lichSuNuocDi.length < 2) return; 
+                
+                // Xóa hiệu ứng nhấp nháy cũ trước khi hoàn nước
+                cacOVuong.forEach(o => o.classList.remove("may-vua-di"));
+
+                for(let i = 0; i < 2; i++) {
+                    let nuocCuoi = lichSuNuocDi.pop();
+                    if(nuocCuoi) {
+                        let khoaMa = nuocCuoi.r + "-" + nuocCuoi.c;
+                        banCoMang.delete(khoaMa);
+                        let cell = document.getElementById("cell-" + nuocCuoi.r + "-" + nuocCuoi.c);
+                        cell.innerText = "";
+                        cell.style.backgroundColor = "#f5deb3";
+                    }
+                }
+                luotCuaMay = false;
+                lblThoiGian.innerText = "Đã lùi nước đi. Lượt của bạn (X)";
+            });
+
+            cacOVuong.forEach(function(cell) {
+                cell.addEventListener("click", function() {
+                    if (!dangChoi) {
+                        alert("Vui lòng nhấn nút 'CHƠI / CHƠI LẠI' để bắt đầu đấu với Máy!");
+                        return;
+                    }
+if (luotCuaMay) return;
+const r = parseInt(this.getAttribute("data-row"));
+const c = parseInt(this.getAttribute("data-col"));
+let khoaMa = r + "-" + c;
+if (banCoMang.has(khoaMa)) return;
+// Khi người chơi bấm đi, dọn sạch hiệu ứng nhấp nháy của Máy ở nước trước đó
+cacOVuong.forEach(o => o.classList.remove("may-vua-di"));
+// Bạn đi quân (X)
+thucHienNuocDi(r, c, "X");
+let oThangList = tim5OChienThang(r, c, "X");
+if (oThangList.length >= 5) {
+lblThoiGian.innerText = "CHÚC MỪNG! Bạn đã thắng Máy!";
+tySoBan = tySoBan + 1;
+capNhatTySo();
+dangChoi = false;
+// Kích hoạt bọc hiệu ứng cho 5 ô thắng cuộc
+hienThiHieuUngThang(oThangList);
+// Phát âm thanh chiến thắng
+mAudioThang.currentTime = 0;
+mAudioThang.play().catch(() => {});
+return;
+}
+luotCuaMay = true;
+lblThoiGian.innerText = "Máy đang phân tích nước cờ...";
+setTimeout(mayDiNuoc, 400);
+});
+});
+});
+function batDauTroChoi() {
+banCoMang.clear();
+lichSuNuocDi = [];
+dangChoi = true;
+cacOVuong.forEach(function(cell) {
+cell.innerText = "";
+cell.style.color = "#000000";
+cell.style.backgroundColor = "#f5deb3";
+cell.classList.remove("may-vua-di", "o-thang-cuoc"); // Xóa bỏ toàn bộ các lớp hiệu ứng cũ
+});
+if (trangThaiNhac) {
+mAudioNen.play().catch(() => {});
+}
+if (cbLuotDiTruoc.value === "1") {
+luotCuaMay = true;
+lblThoiGian.innerText = "Máy đang phân tích nước cờ...";
+setTimeout(mayDiNuoc, 500);
+} else {
+luotCuaMay = false;
+lblThoiGian.innerText = "Lượt đi của bạn (X)";
+}
+}
+function thucHienNuocDi(r, c, quanCo) {
+let khoaMa = r + "-" + c;
+banCoMang.set(khoaMa, quanCo);
+lichSuNuocDi.push({r: r, c: c});
+let cell = document.getElementById("cell-" + r + "-" + c);
+cell.innerText = quanCo;
+cell.style.color = (quanCo === "X") ? "#ff0000" : "#0000ff";
+if (quanCo === "X") {
+cell.style.backgroundColor = "#ffebd2";
+} else {
+// Nếu là Máy đi, thêm class hiệu ứng nhấp nháy vào ô này
+cell.classList.add("may-vua-di");
+}
+}
+function hienThiHieuUngThang(danhSachO) {
+danhSachO.forEach(pos => {
+let cell = document.getElementById("cell-" + pos.r + "-" + pos.c);
+if (cell) {
+cell.classList.add("o-thang-cuoc");
+}
+});
+}
+function capNhatTySo() {
+lblTySo.innerText = "Tỷ số ván đấu ➔ Bạn: " + tySoBan + " - Máy: " + tySoMay;
+}
+function mayDiNuoc() {
+if (!dangChoi) return;
+let diemCaoNhat = -1;
+let targetR = 10;
+let targetC = 10;
+if (lichSuNuocDi.length === 0) {
+thucHienNuocDi(10, 10, "O");
+luotCuaMay = false;
+lblThoiGian.innerText = "Lượt đi của bạn (X)";
+return;
+}
+for (let r = 0; r < 20; r++) {
+for (let c = 0; c < 20; c++) {
+let khoaMa = r + "-" + c;
+if (!banCoMang.has(khoaMa)) {
+let diemTanCong = chamDiemO(r, c, "O");
+let diemPhongNgu = chamDiemO(r, c, "X");
+let tongDiem = diemTanCong + (diemPhongNgu * 2.5);
+if (tongDiem > diemCaoNhat) {
+diemCaoNhat = tongDiem;
+targetR = r;
+targetC = c;
+}
+}
+}
+}
+// Máy hạ quân (O)
+thucHienNuocDi(targetR, targetC, "O");
+let oThangList = tim5OChienThang(targetR, targetC, "O");
+if (oThangList.length >= 5) {
+lblThoiGian.innerText = "MÁY ĐÃ THẮNG! Hãy thử lại ván mới.";
+tySoMay = tySoMay + 1;
+capNhatTySo();
+dangChoi = false;
+// Máy thắng thì dọn nhấp nháy thông thường và bọc 5 ô thắng bằng hiệu ứng lớn
+cacOVuong.forEach(o => o.classList.remove("may-vua-di"));
+hienThiHieuUngThang(oThangList);
+// Phát âm thanh thua cuộc
+mAudioThua.currentTime = 0;
+mAudioThua.play().catch(() => {});
+return;
+}
+luotCuaMay = false;
+lblThoiGian.innerText = "Lượt đi của bạn (X)";
+}
+function demQuan(r, c, dr, dc, quanCo) {
+let dem = 0;
+let nr = r + dr;
+let nc = c + dc;
+for (let i = 0; i < 4; i++) {
+let khoaMa = nr + "-" + nc;
+if (nr >= 0 && nr < 20 && nc >= 0 && nc < 20 && banCoMang.get(khoaMa) === quanCo) {
+dem++;
+nr += dr;
+nc += dc;
+} else {
+break;
+}
+}
+return dem;
+}
+// Thu thập danh sách tọa độ của chuỗi ô thắng hàng
+function thuThapOThangHang(r, c, dr, dc, quanCo) {
+let list = [{r: r, c: c}];
+let nr = r + dr;
+let nc = c + dc;
+while (nr >= 0 && nr < 20 && nc >= 0 && nc < 20 && banCoMang.get(nr + "-" + nc) === quanCo) {
+list.push({r: nr, c: nc});
+nr += dr;
+nc += dc;
+}
+nr = r - dr;
+nc = c - dc;
+while (nr >= 0 && nr < 20 && nc >= 0 && nc < 20 && banCoMang.get(nr + "-" + nc) === quanCo) {
+list.push({r: nr, c: nc});
+nr -= dr;
+nc -= dc;
+}
+return list;
+}
+/* ĐÃ SỬA CHUẨN: Quét 4 hướng thuần túy không gây crash kịch bản */
+function tim5OChienThang(r, c, quanCo) {
+let huongDi = [
+{ dr: 0, dc: 1 },  // Hướng ngang
+{ dr: 1, dc: 0 },  // Hướng dọc
+{ dr: 1, dc: 1 },  // Hướng chéo xuôi
+{ dr: 1, dc: -1 }  // Hướng chéo ngược
+];
+for (let i = 0; i < huongDi.length; i++) {
+let h = huongDi[i];
+let ketQua = thuThapOThangHang(r, c, h.dr, h.dc, quanCo);
+if (ketQua.length >= 5) return ketQua;
+}
+return [];
+}
+function chamDiemO(r, c, quanCo) {
+let tongDiem = 0;
+tongDiem += tinhDiemGiaTri(demQuan(r, c, 0, 1, quanCo) + demQuan(r, c, 0, -1, quanCo));
+tongDiem += tinhDiemGiaTri(demQuan(r, c, 1, 0, quanCo) + demQuan(r, c, -1, 0, quanCo));
+tongDiem += tinhDiemGiaTri(demQuan(r, c, 1, 1, quanCo) + demQuan(r, c, -1, -1, quanCo));
+tongDiem += tinhDiemGiaTri(demQuan(r, c, 1, -1, quanCo) + demQuan(r, c, -1, 1, quanCo));
+return tongDiem;
+}
+function tinhDiemGiaTri(soQuan) {
+if (soQuan >= 4) return 100000;
+if (soQuan === 3) return 5000;
+if (soQuan === 2) return 300;
+if (soQuan === 1) return 10;
+return 0;
+}
+function kiemTraChienThang(r, c, quanCo) {
+return tim5OChienThang(r, c, quanCo).length >= 5;
+}
+
+
+
